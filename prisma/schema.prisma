@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(cuid())
+
+  name           String
+  last_name      String
+  email          String  @unique
+  password       String
+  profile_picture String?
+
+  createAt  DateTime  @default(now())
+  updatedAt DateTime?  @updatedAt
+  deletedAt DateTime?
+
+  preferences    Preferences?
+  expenses       Expense[]
+  categories     Category[]
+  subscriptions  Subscription[]
+  paymentHistory PaymentHistory[]
+}
+
+model Category {
+  id     String @id @default(cuid())
+  userId String
+
+  name        String
+  description String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?  @updatedAt
+  deletedAt DateTime?
+
+  user     User      @relation(fields: [userId], references: [id])
+  expenses Expense[]
+
+  @@unique([userId, name])
+}
+
+model Expense {
+  id         String @id @default(cuid())
+  userId     String
+  categoryId String
+
+  date        DateTime
+  urlFile     String?
+  totalAmount Float
+  info        String?
+  business    String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?  @updatedAt
+  deletedAt DateTime?
+
+  user     User     @relation(fields: [userId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+}
+
+model Preferences {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  theme     Theme    @default(LIGHT)
+  language  Language @default(EN)
+  twoFactor Boolean  @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?  @updatedAt
+  deletedAt DateTime?
+
+  user     User      @relation(fields: [userId], references: [id])
+}
+
+model PaymentHistory {
+  id     String @id @default(cuid())
+  userId String
+
+  subscriptionId String
+  amount         Float
+  date           DateTime
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?  @updatedAt
+  deletedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Subscription {
+  id     String @id @default(cuid())
+  userId String
+  planId String
+
+  isAnnual  Boolean   @default(false)
+  startDate DateTime
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?  @updatedAt
+  deletedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
+}
+
+model Plan {
+  id String @id @default(cuid())
+
+  planType         PlanType
+  price     Float
+  dailyFilesLimit  Int
+  categoryLimit    Int
+  hasTemplates     Boolean
+  autoEmailReports Boolean
+  allowedFormats   ExportFormat[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?  @updatedAt
+  deletedAt DateTime?
+
+  subscriptions Subscription[]
+}
+
+model Recovery {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiration DateTime
+  createdAt DateTime @default(now())
+}
+
+model Otps {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String   @unique
+  expiration DateTime
+  createdAt DateTime @default(now())
+}
+
+enum Language {
+  EN
+  ES
+}
+
+enum Theme {
+  LIGHT
+  DARK
+}
+
+enum PlanType {
+  FREE
+  PREMIUM
+}
+
+enum ExportFormat {
+  PDF
+  EXCEL
+  CSV
+}
