@@ -70,6 +70,24 @@ export class UsersService {
     return user;
   }
 
+  async getPaymentHistory(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        paymentHistory: true,
+      },
+    });
+
+    if (!user) {
+      throw {
+        message: "User not found",
+        status: StatusCodes.NOT_FOUND,
+      };
+    }
+
+    return user.paymentHistory;
+  }
+
   async updateUser(id: string, user: UserUpdateType) {
     await this.getUserById(id);
 

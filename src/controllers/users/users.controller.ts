@@ -169,6 +169,32 @@ export class UsersController {
     }
   }
 
+  async getPaymentHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const current_user: any = (req as any).current_user;
+
+      const paymentHistory = await this.usersService.getPaymentHistory(
+        current_user.id
+      );
+
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        body: paymentHistory,
+      });
+    } catch (error: any) {
+      console.log("Error in getPaymentHistory: ", error);
+      res.status(error.status || StatusCodes.INTERNAL_SERVER_ERROR).json({
+        status: error.status || StatusCodes.INTERNAL_SERVER_ERROR,
+        body: {
+          error: {
+            message:
+              error.message || "Server error while fetching payment history",
+          },
+        },
+      });
+    }
+  }
+
   async updateUser(req: Request, res: Response, next: NextFunction) {
     try {
       const { id }: any = req.params;

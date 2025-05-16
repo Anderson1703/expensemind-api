@@ -23,6 +23,13 @@ usersRouter.get(
 );
 
 usersRouter.get(
+  "/payment-history",
+  validateSession,
+  async (req: Request, res: Response, next: NextFunction) =>
+    await usersController.getPaymentHistory(req, res, next)
+)
+
+usersRouter.get(
   "/user/:id",
   validateSession,
   async (req: Request, res: Response, next: NextFunction) =>
