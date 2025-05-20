@@ -53,6 +53,36 @@ export class AuthController {
     }
   }
 
+  async sendOtpCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+
+      const otpCode = await AuthUtil.generateOTP();
+
+      await this.usersAuthService.sendVerificationOTPCode({
+        email: email,
+        OTPCode: otpCode,
+      });
+
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        body: {
+          message: "OTP code sent to your email",
+        },
+      });
+    } catch (error: any) {
+      console.log("Error in sendOtpCode: ", error);
+      res.status(error.status || StatusCodes.INTERNAL_SERVER_ERROR).json({
+        status: error.status || StatusCodes.INTERNAL_SERVER_ERROR,
+        body: {
+          error: {
+            message: error.message || "Server error while sending OTP code",
+          },
+        },
+      });
+    }
+  }
+
   async sendResetPasswordEmail(
     req: Request,
     res: Response,

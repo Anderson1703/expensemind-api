@@ -37,6 +37,13 @@ authRouter.post(
 );
 
 authRouter.post(
+  "/send-otp",
+  validateData(UserForgotPasswordSchema),
+  async (req: Request, res: Response, next: NextFunction) =>
+    authController.sendOtpCode(req, res, next)
+);
+
+authRouter.post(
   "/reset-password",
   validateData(UserResetPasswordSchema),
   async (req: Request, res: Response, next: NextFunction) =>
