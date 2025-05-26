@@ -5,6 +5,7 @@ import categoriesRouter from "./categories/categories.routes";
 import planesRouter from "./planes/planes.routes";
 import preferencesRouter from "./preferences/preferences.route";
 import expensesRouter from "./expenses/expenses.routes";
+import ocrRouter from "./ocr/ocr.routes";
 
 const root = Router();
 const server = express();
@@ -20,6 +21,6 @@ server.use("/categories", categoriesRouter);
 server.use("/planes", planesRouter);
 server.use("/preferences", preferencesRouter);
 server.use("/expenses", expensesRouter);
-server.use("/ocr", Router); 
+server.use("/ocr", ocrRouter); 
 
 export default server;
