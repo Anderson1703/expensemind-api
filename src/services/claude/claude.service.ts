@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { PrismaClient } from "@prisma/client";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -26,10 +27,11 @@ interface Message {
 
 // Tipos para la respuesta esperada
 interface ExtractedData {
-  date: string; // DateTime en formato ISO
-  totalAmount: number; // Float
-  info?: string; // Descripción opcional
-  business?: string; // Nombre del negocio opcional
+  date: string;
+  totalAmount: number;
+  info?: string;
+  business?: string;
+  categoryId: string; // nuevo campo obligatorio
 }
 
 interface ErrorResponse {
@@ -37,9 +39,25 @@ interface ErrorResponse {
   message: string;
 }
 
+interface Category {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date | null;
+  deletedAt: Date | null;
+}
+
 type ExtractionResult = ExtractedData | ErrorResponse;
 
 export class ClaudeService {
+  private prisma: PrismaClient;
+
+  constructor() {
+    this.prisma = new PrismaClient();
+  }
+
   /**
    * Extrae datos de archivos usando la API de Claude
    * @param files Lista de archivos a procesar
@@ -51,6 +69,13 @@ export class ClaudeService {
     userId: string
   ): Promise<ExtractionResult> {
     try {
+      const categories: Category[] = await this.prisma.category.findMany({
+        where: { userId: userId },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
       const messages: Message[] = [
         {
           role: "user",
@@ -69,58 +94,47 @@ export class ClaudeService {
         });
       });
 
-      const systemPrompt = `Eres un experto en extracción de datos de facturas y recibos. Tu tarea es analizar las imágenes proporcionadas y extraer información específica.
+      // Crear lista de categorías en texto legible
+      const categoryList = categories
+        .map((cat) => `- ${cat.name}: ID=${cat.id}`)
+        .join("\n");
+
+      // Agregar instrucciones al prompt
+      const systemPrompt = `Eres un experto en extracción y clasificación de datos de facturas. Extraerás datos clave y asignarás la categoría más adecuada del gasto según una lista.
 
 INSTRUCCIONES:
-1. Analiza cuidadosamente cada imagen en busca de facturas, recibos o comprobantes
-2. Extrae los datos requeridos con máxima precisión
-3. Si los datos no son legibles o las imágenes no contienen facturas/recibos, devuelve un mensaje de error
+1. Analiza las imágenes proporcionadas buscando facturas o recibos.
+2. Extrae: fecha, monto total, descripción corta, nombre del negocio.
+3. Asigna la categoría más apropiada del gasto con base en su descripción, tipo de compra y establecimiento.
 
-FORMATO DE SALIDA REQUERIDO:
-Siempre responde ÚNICAMENTE con un objeto JSON válido en uno de estos dos formatos:
+LISTA DE CATEGORÍAS DISPONIBLES:
+${categoryList}
 
-CASO EXITOSO:
+FORMATO DE RESPUESTA (SOLO JSON válido):
+
+✅ CASO EXITOSO:
 {
-  "date": "YYYY-MM-DDTHH:mm:ss.sssZ",
-  "totalAmount": 0.00,
-  "info": "Descripción breve del tipo de compra",
-  "business": "Nombre del establecimiento"
+"date": "YYYY-MM-DDTHH:mm:ss.sssZ",
+"totalAmount": 0.00,
+"info": "Descripción breve",
+"business": "Nombre del establecimiento",
+"categoryId": "id-categoria-seleccionada"
 }
 
-CASO DE ERROR:
+❌ CASO DE ERROR:
 {
-  "status": "error",
-  "message": "Descripción específica del problema"
+"status": "error",
+"message": "Descripción del problema"
 }
 
-REGLAS ESPECÍFICAS:
-- date: Convertir a formato ISO 8601. Si no hay fecha, usar fecha actual
-- totalAmount: Número decimal sin símbolos de moneda
-- info: Descripción contextual breve (máximo 50 caracteres). Ejemplos:
-  * "Compra en supermercado"
-  * "Combustible gasolinera"
-  * "Servicio de restaurante"
-  * "Compra farmacia"
-- business: Nombre exacto del establecimiento según aparece en el documento
-- Si falta información crítica (monto total), devolver error
-- Si la imagen no es clara o no contiene facturas/recibos, devolver error
+REGLAS:
+- Elige solo UNA categoría cuyo nombre se ajuste mejor al gasto.
+- Usa exactamente el ID de la categoría (no su nombre).
+- Si no puedes determinar una categoría adecuada, devuelve error.
+- Si no se detecta un gasto válido, devuelve error.
 
-EJEMPLOS DE RESPUESTAS:
-✅ Correcto:
-{
-  "date": "2024-01-15T14:30:00.000Z",
-  "totalAmount": 125.50,
-  "info": "Compra en supermercado",
-  "business": "Supermercado La Economía"
-}
-
-❌ Error:
-{
-  "status": "error",
-  "message": "La imagen no contiene una factura o recibo legible"
-}
-
-IMPORTANTE: Responde SOLO con el JSON, sin texto adicional antes o después.`;
+IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
+`;
 
       const msg = await anthropic.messages.create({
         model: "claude-sonnet-4-20250514",
@@ -144,7 +158,8 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional antes o después.`;
         // Validar que tenga los campos requeridos
         if (
           !parsedResponse.hasOwnProperty("date") ||
-          !parsedResponse.hasOwnProperty("totalAmount")
+          !parsedResponse.hasOwnProperty("totalAmount") ||
+          !parsedResponse.hasOwnProperty("categoryId")
         ) {
           return {
             status: "error",
