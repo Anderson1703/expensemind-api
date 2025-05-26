@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { PrismaClient } from "@prisma/client";
+import { StatusCodes } from "http-status-codes";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -35,7 +36,7 @@ interface ExtractedData {
 }
 
 interface ErrorResponse {
-  status: "error";
+  status: StatusCodes;
   message: string;
 }
 
@@ -161,28 +162,21 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
           !parsedResponse.hasOwnProperty("totalAmount") ||
           !parsedResponse.hasOwnProperty("categoryId")
         ) {
-          return {
-            status: "error",
-            message: "Respuesta incompleta: faltan campos requeridos",
-          };
+          throw new Error("Respuesta incompleta: faltan campos requeridos");
         }
 
         return parsedResponse as ExtractedData;
       } catch (parseError) {
-        console.error("Error al parsear respuesta JSON:", parseError);
-        return {
-          status: "error",
-          message: "Error al procesar la respuesta del análisis",
-        };
+        throw new Error("Error al procesar la respuesta del análisis");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(
         `Error al extraer datos de archivos para usuario ${userId}:`,
         error
       );
       return {
-        status: "error",
-        message: "Error interno al procesar los archivos",
+        status: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: error.message || "Error desconocido al procesar archivos",
       };
     }
   }
