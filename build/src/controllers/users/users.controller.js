@@ -172,6 +172,29 @@ class UsersController {
             }
         });
     }
+    getPaymentHistory(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const current_user = req.current_user;
+                const paymentHistory = yield this.usersService.getPaymentHistory(current_user.id);
+                res.status(http_status_codes_1.StatusCodes.OK).json({
+                    status: http_status_codes_1.StatusCodes.OK,
+                    body: paymentHistory,
+                });
+            }
+            catch (error) {
+                console.log("Error in getPaymentHistory: ", error);
+                res.status(error.status || http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    status: error.status || http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR,
+                    body: {
+                        error: {
+                            message: error.message || "Server error while fetching payment history",
+                        },
+                    },
+                });
+            }
+        });
+    }
     updateUser(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {

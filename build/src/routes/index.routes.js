@@ -43,6 +43,7 @@ const categories_routes_1 = __importDefault(require("./categories/categories.rou
 const planes_routes_1 = __importDefault(require("./planes/planes.routes"));
 const preferences_route_1 = __importDefault(require("./preferences/preferences.route"));
 const expenses_routes_1 = __importDefault(require("./expenses/expenses.routes"));
+const ocr_routes_1 = __importDefault(require("./ocr/ocr.routes"));
 const root = (0, express_1.Router)();
 const server = (0, express_1.default)();
 root.get("/", (req, res) => {
@@ -55,5 +56,5 @@ server.use("/categories", categories_routes_1.default);
 server.use("/planes", planes_routes_1.default);
 server.use("/preferences", preferences_route_1.default);
 server.use("/expenses", expenses_routes_1.default);
-server.use("/ocr", express_1.Router);
+server.use("/ocr", ocr_routes_1.default);
 exports.default = server;

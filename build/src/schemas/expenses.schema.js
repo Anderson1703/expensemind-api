@@ -8,12 +8,15 @@ exports.ExpenseCreateSchema = zod_1.z.object({
     totalAmount: zod_1.z.number(),
     urlFile: zod_1.z.string().optional(),
     info: zod_1.z.string().optional(),
-    business: zod_1.z.string().optional()
+    business: zod_1.z.string().optional(),
 });
 exports.ExpenseUpdateSchema = zod_1.z.object({
-    date: zod_1.z.date().optional(),
+    date: zod_1.z
+        .string()
+        .transform((date) => new Date(date))
+        .optional(),
     totalAmount: zod_1.z.number().optional(),
     urlFile: zod_1.z.string().optional(),
     info: zod_1.z.string().optional(),
-    business: zod_1.z.string().optional()
+    business: zod_1.z.string().optional(),
 });

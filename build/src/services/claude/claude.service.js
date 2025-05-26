@@ -1,143 +1,169 @@
 "use strict";
-// import axios from 'axios';
-// import { Message } from 'anthropic';
-// // Interfaz para la respuesta de Claude
-// interface ClaudeResponse {
-//   id: string;
-//   type: string;
-//   role: string;
-//   content: Array<{
-//     type: string;
-//     text?: string;
-//   }>;
-//   model: string;
-//   stop_reason: string;
-//   usage: {
-//     input_tokens: number;
-//     output_tokens: number;
-//   };
-// }
-// export class ClaudeService {
-//   private apiKey: string;
-//   private apiUrl: string;
-//   private defaultModel: string;
-//   private defaultMaxTokens: number;
-//   constructor() {
-//     this.apiKey = process.env.CLAUDE_API_KEY!;
-//     this.apiUrl = 'https://api.anthropic.com/v1/messages';
-//     this.defaultModel = process.env.CLAUDE_MODEL || 'claude-3-haiku-20240307';
-//     this.defaultMaxTokens = parseInt(process.env.CLAUDE_MAX_TOKENS || '1000');
-//     if (!this.apiKey) {
-//       console.warn('ADVERTENCIA: CLAUDE_API_KEY no está configurada en las variables de entorno');
-//     }
-//   }
-//   /**
-//    * Extrae datos de archivos usando la API de Claude
-//    * @param files Lista de archivos a procesar
-//    * @param userId ID del usuario para logging
-//    * @returns Datos extraídos en formato JSON
-//    */
-//   async extractDataFromFiles(
-//     files: Express.Multer.File[],
-//     userId: string
-//   ): Promise<any> {
-//     try {
-//       if (!this.apiKey) {
-//         throw new Error('CLAUDE_API_KEY no está configurada');
-//       }
-//       // Registrar la solicitud
-//       console.log(`Iniciando extracción de datos para usuario ${userId} con ${files.length} archivos`);
-//       // Crear un mensaje para enviar a Claude
-//       const systemPrompt = this.buildSystemPrompt();
-//       // Preparar el mensaje con archivos adjuntos
-//       const messages: Message[] = [
-//         {
-//           role: "user",
-//           content: [
-//             {
-//               type: "text",
-//               text: systemPrompt
-//             }
-//           ]
-//         }
-//       ];
-//       // Añadir cada archivo como contenido del mensaje
-//       files.forEach((file) => {
-//         // Agregar archivo como media al mensaje
-//         messages[0].content.push({
-//           type: "image", // Claude trata tanto imágenes como PDFs como "image"
-//           source: {
-//             type: "base64",
-//             media_type: file.mimetype,
-//             data: file.buffer.toString('base64')
-//           }
-//         });
-//       });
-//       // Configurar la petición
-//       const response = await axios.post<ClaudeResponse>(
-//         this.apiUrl,
-//         {
-//           model: this.defaultModel,
-//           max_tokens: this.defaultMaxTokens,
-//           messages: messages,
-//           temperature: 0 // Usar temperatura 0 para resultados más deterministas
-//         },
-//         {
-//           headers: {
-//             'Content-Type': 'application/json',
-//             'x-api-key': this.apiKey,
-//             'anthropic-version': '2023-06-01'
-//           }
-//         }
-//       );
-//       // Obtener el texto de la respuesta
-//       const responseText = response.data.content[0].text || '';
-//       // Intentar parsear la respuesta como JSON
-//       try {
-//         // Si Claude devuelve un JSON string, lo parseamos
-//         return JSON.parse(responseText);
-//       } catch (parseError) {
-//         // Si no es JSON, devolvemos el texto como está
-//         console.log('La respuesta no es un JSON válido, devolviendo texto plano');
-//         return { rawText: responseText };
-//       }
-//     } catch (error: any) {
-//       console.error('Error al llamar a la API de Claude:', error.message);
-//       // Si hay una respuesta de error de la API, la capturamos
-//       if (error.response) {
-//         console.error('Detalles del error:', error.response.data);
-//         throw new Error(`Error en la API de Claude: ${error.response.data.error?.message || 'Error desconocido'}`);
-//       }
-//       throw error;
-//     }
-//   }
-//   /**
-//    * Construye el prompt del sistema para enviar a Claude
-//    * @returns Prompt del sistema
-//    */
-//   private buildSystemPrompt(): string {
-//     return `
-//       Por favor, extrae toda la información relevante de los archivos adjuntos.
-//       INSTRUCCIONES IMPORTANTES:
-//       1. Extrae texto, datos tabulares, campos clave/valor y cualquier otra información estructurada.
-//       2. Si hay tablas, conviértelas a formato estructurado.
-//       3. Identifica nombres, fechas, cantidades monetarias, direcciones y cualquier otro dato importante.
-//       4. Si hay múltiples páginas o documentos, organiza la información por documento.
-//       5. Devuelve ÚNICAMENTE un objeto JSON con los datos extraídos, sin ningún texto adicional.
-//       6. La estructura del JSON debe ser clara y bien organizada para facilitar su procesamiento.
-//       Por favor, devuelve toda la información en formato JSON válido, siguiendo un esquema similar a:
-//       {
-//         "documentos": [
-//           {
-//             "nombre": "nombre_del_archivo.ext",
-//             "tipo": "factura|recibo|formulario|etc",
-//             "datos": {
-//               // Datos extraídos específicos según el tipo de documento
-//             },
-//             "texto_completo": "Texto completo extraído del documento (opcional)"
-//           }
-//         ]
-//       }
-//     `;
-//   }
-// }
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ClaudeService = void 0;
+const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
+const client_1 = require("@prisma/client");
+const http_status_codes_1 = require("http-status-codes");
+const anthropic = new sdk_1.default({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+});
+class ClaudeService {
+    constructor() {
+        this.prisma = new client_1.PrismaClient();
+    }
+    /**
+     * Extrae datos de archivos usando la API de Claude
+     * @param files Lista de archivos a procesar
+     * @param userId ID del usuario para logging
+     * @returns Datos extraídos en formato JSON
+     */
+    extractDataFromFiles(files, userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const categories = yield this.prisma.category.findMany({
+                    where: { userId: userId },
+                    orderBy: {
+                        createdAt: "desc",
+                    },
+                });
+                const messages = [
+                    {
+                        role: "user",
+                        content: [],
+                    },
+                ];
+                files.forEach((file) => {
+                    messages[0].content.push({
+                        type: file.mimetype.startsWith("image/") ? "image" : "document",
+                        source: {
+                            type: "base64",
+                            media_type: file.mimetype,
+                            data: file.buffer.toString("base64"),
+                        },
+                    });
+                });
+                // Crear lista de categorías en texto legible
+                const categoryList = categories
+                    .map((cat) => `- ${cat.name}: ID=${cat.id}`)
+                    .join("\n");
+                // Agregar instrucciones al prompt
+                const systemPrompt = `Eres un experto en extracción y clasificación de datos de facturas. Extraerás datos clave y asignarás la categoría más adecuada del gasto según una lista.
+
+INSTRUCCIONES:
+1. Analiza las imágenes proporcionadas buscando facturas o recibos.
+2. Extrae: fecha, monto total, descripción corta, nombre del negocio.
+3. Asigna la categoría más apropiada del gasto con base en su descripción, tipo de compra y establecimiento.
+
+LISTA DE CATEGORÍAS DISPONIBLES:
+${categoryList}
+
+FORMATO DE RESPUESTA (SOLO JSON válido):
+
+✅ CASO EXITOSO:
+{
+"date": "YYYY-MM-DDTHH:mm:ss.sssZ",
+"totalAmount": 0.00,
+"info": "Descripción breve",
+"business": "Nombre del establecimiento",
+"categoryId": "id-categoria-seleccionada"
+}
+
+❌ CASO DE ERROR:
+{
+"status": "error",
+"message": "Descripción del problema"
+}
+
+REGLAS:
+- Elige solo UNA categoría cuyo nombre se ajuste mejor al gasto.
+- Usa exactamente el ID de la categoría (no su nombre).
+- Si no puedes determinar una categoría adecuada, devuelve error.
+- Si no se detecta un gasto válido, devuelve error.
+
+IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
+`;
+                const msg = yield anthropic.messages.create({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 1000,
+                    temperature: 0.1, // Temperatura baja para mayor consistencia
+                    system: systemPrompt,
+                    messages: messages,
+                });
+                const responseText = msg.content[0].type === "text" ? msg.content[0].text : "{}";
+                try {
+                    const parsedResponse = JSON.parse(responseText);
+                    // Validación básica de la respuesta
+                    if (parsedResponse.status === "error") {
+                        return parsedResponse;
+                    }
+                    // Validar que tenga los campos requeridos
+                    if (!parsedResponse.hasOwnProperty("date") ||
+                        !parsedResponse.hasOwnProperty("totalAmount") ||
+                        !parsedResponse.hasOwnProperty("categoryId")) {
+                        throw new Error("Respuesta incompleta: faltan campos requeridos");
+                    }
+                    return parsedResponse;
+                }
+                catch (parseError) {
+                    throw new Error("Error al procesar la respuesta del análisis");
+                }
+            }
+            catch (error) {
+                console.error(`Error al extraer datos de archivos para usuario ${userId}:`, error);
+                return {
+                    status: http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR,
+                    message: error.message || "Error desconocido al procesar archivos",
+                };
+            }
+        });
+    }
+    /**
+     * Método auxiliar para validar si un archivo es una imagen válida
+     */
+    isValidImageFile(file) {
+        const validImageTypes = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/webp",
+        ];
+        return validImageTypes.includes(file.mimetype);
+    }
+    /**
+     * Método auxiliar para validar si un archivo es un documento válido
+     */
+    isValidDocumentFile(file) {
+        const validDocumentTypes = ["application/pdf"];
+        return validDocumentTypes.includes(file.mimetype);
+    }
+    /**
+     * Valida que los archivos sean del tipo correcto antes de procesarlos
+     */
+    validateFiles(files) {
+        if (!files || files.length === 0) {
+            return { valid: false, message: "No se proporcionaron archivos" };
+        }
+        for (const file of files) {
+            if (!this.isValidImageFile(file) && !this.isValidDocumentFile(file)) {
+                return {
+                    valid: false,
+                    message: `Tipo de archivo no válido: ${file.mimetype}. Solo se permiten imágenes (JPEG, PNG, WebP) y PDFs`,
+                };
+            }
+        }
+        return { valid: true };
+    }
+}
+exports.ClaudeService = ClaudeService;

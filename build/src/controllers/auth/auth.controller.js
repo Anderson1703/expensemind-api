@@ -60,6 +60,35 @@ class AuthController {
             }
         });
     }
+    sendOtpCode(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { email } = req.body;
+                const otpCode = yield auth_util_1.AuthUtil.generateOTP();
+                yield this.usersAuthService.sendVerificationOTPCode({
+                    email: email,
+                    OTPCode: otpCode,
+                });
+                res.status(http_status_codes_1.StatusCodes.OK).json({
+                    status: http_status_codes_1.StatusCodes.OK,
+                    body: {
+                        message: "OTP code sent to your email",
+                    },
+                });
+            }
+            catch (error) {
+                console.log("Error in sendOtpCode: ", error);
+                res.status(error.status || http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    status: error.status || http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR,
+                    body: {
+                        error: {
+                            message: error.message || "Server error while sending OTP code",
+                        },
+                    },
+                });
+            }
+        });
+    }
     sendResetPasswordEmail(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {

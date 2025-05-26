@@ -21,6 +21,7 @@ const usersController = new users_controller_1.UsersController();
 authRouter.post("/login", (0, validation_schema_middleware_1.validateData)(auth_schema_1.UserLoginSchema), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return yield authController.login(req, res, next); }));
 authRouter.post("/register", (0, validation_schema_middleware_1.validateData)(users_schema_1.UserCreateSchema), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return usersController.createUser(req, res, next); }));
 authRouter.post("/forgot-password", (0, validation_schema_middleware_1.validateData)(auth_schema_1.UserForgotPasswordSchema), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return authController.sendResetPasswordEmail(req, res, next); }));
+authRouter.post("/send-otp", (0, validation_schema_middleware_1.validateData)(auth_schema_1.UserForgotPasswordSchema), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return authController.sendOtpCode(req, res, next); }));
 authRouter.post("/reset-password", (0, validation_schema_middleware_1.validateData)(auth_schema_1.UserResetPasswordSchema), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return authController.resetPassword(req, res, next); }));
 authRouter.post("/verify-otp", (0, validation_schema_middleware_1.validateData)(auth_schema_1.UserOTPVerificationSchema), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return authController.verifyOTPCode(req, res, next); }));
 exports.default = authRouter;

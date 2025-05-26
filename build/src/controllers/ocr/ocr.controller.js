@@ -1,126 +1,124 @@
 "use strict";
-// import { Request, Response, NextFunction } from "express";
-// import { StatusCodes } from "http-status-codes";
-// import { ClaudeService } from "../../services/claude/claude.service";
-// import multer from "multer";
-// import { MulterError } from "multer";
-// // Configuración de multer para almacenar archivos en memoria
-// const storage = multer.memoryStorage();
-// // Función para filtrar tipos de archivos permitidos (imágenes y PDFs)
-// const fileFilter = (
-//   req: Request,
-//   file: Express.Multer.File,
-//   cb: multer.FileFilterCallback
-// ) => {
-//   // Aceptar solo imágenes y PDFs
-//   if (
-//     file.mimetype === "image/jpeg" ||
-//     file.mimetype === "image/png" ||
-//     file.mimetype === "image/gif" ||
-//     file.mimetype === "application/pdf"
-//   ) {
-//     cb(null, true);
-//   } else {
-//     cb(
-//       new Error(
-//         "Formato de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, GIF) y PDFs."
-//       )
-//     );
-//   }
-// };
-// // Configurar multer con opciones
-// const upload = multer({
-//   storage: storage,
-//   fileFilter: fileFilter,
-//   limits: {
-//     fileSize: 5 * 1024 * 1024, // Límite de 5MB por archivo
-//   },
-// });
-// export class OcrController {
-//   private claudeService: ClaudeService;
-//   constructor() {
-//     this.claudeService = new ClaudeService();
-//   }
-//   // Middleware para procesar la subida de archivos
-//   uploadFiles = upload.array("files", 10);
-//   // Método para manejar errores de multer
-//   handleMulterError = (
-//     err: any,
-//     req: Request,
-//     res: Response,
-//     next: NextFunction
-//   ) => {
-//     if (err instanceof MulterError) {
-//       return res.status(StatusCodes.BAD_REQUEST).json({
-//         status: StatusCodes.BAD_REQUEST,
-//         body: {
-//           error: {
-//             message: `Error al procesar archivos: ${err.message}`,
-//           },
-//         },
-//       });
-//     } else if (err) {
-//       return res.status(StatusCodes.BAD_REQUEST).json({
-//         status: StatusCodes.BAD_REQUEST,
-//         body: {
-//           error: {
-//             message: err.message || "Error desconocido al procesar archivos",
-//           },
-//         },
-//       });
-//     }
-//     next();
-//   };
-//   // Método principal para extraer datos
-//   async extractData(req: Request, res: Response, next: NextFunction) {
-//     try {
-//       const userId = (req as any).current_user.id;
-//       // Verificar que hay archivos
-//       if (!req.files || !(req.files as Express.Multer.File[]).length) {
-//         return res.status(StatusCodes.BAD_REQUEST).json({
-//           status: StatusCodes.BAD_REQUEST,
-//           body: {
-//             error: {
-//               message: "No se han proporcionado archivos para procesar",
-//             },
-//           },
-//         });
-//       }
-//       // Obtener los archivos del request
-//       const files = req.files as Express.Multer.File[];
-//       // Preparar información básica de archivos para logging
-//       const filesInfo = files.map((file) => ({
-//         originalName: file.originalname,
-//         size: file.size,
-//         mimetype: file.mimetype,
-//       }));
-//       console.log(
-//         `Procesando ${files.length} archivos para el usuario ${userId}:`,
-//         filesInfo
-//       );
-//       // Llamar al servicio de Claude para extraer datos
-//       const extractedData = await this.claudeService.extractDataFromFiles(
-//         files,
-//         userId
-//       );
-//       // Responder con los datos extraídos
-//       res.status(StatusCodes.OK).json({
-//         status: StatusCodes.OK,
-//         body: {
-//           message: `${files.length} archivo(s) procesado(s) correctamente`,
-//           data: extractedData,
-//         },
-//       });
-//     } catch (error: any) {
-//       console.log("Error in extractData: ", error);
-//       res.status(error.status || StatusCodes.INTERNAL_SERVER_ERROR).json({
-//         status: error.status || StatusCodes.INTERNAL_SERVER_ERROR,
-//         body: {
-//           error: {
-//             message: error.message || "Server error while extracting data",
-//           },
-//         },
-//       });
-//     }
-//   }
-// }
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OcrController = void 0;
+const http_status_codes_1 = require("http-status-codes");
+const claude_service_1 = require("../../services/claude/claude.service");
+const multer_1 = __importDefault(require("multer"));
+const multer_2 = require("multer");
+// Configuración de multer para almacenar archivos en memoria
+const storage = multer_1.default.memoryStorage();
+// Función para filtrar tipos de archivos permitidos (imágenes y PDFs)
+const fileFilter = (req, file, cb) => {
+    // Aceptar solo imágenes y PDFs
+    if (file.mimetype === "image/jpeg" ||
+        file.mimetype === "image/jpg" ||
+        file.mimetype === "image/png" ||
+        file.mimetype === "image/webp" ||
+        file.mimetype === "application/pdf") {
+        cb(null, true);
+    }
+    else {
+        cb(new Error("Formato de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, GIF) y PDFs."));
+    }
+};
+// Configurar multer con opciones
+const upload = (0, multer_1.default)({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024, // Límite de 5MB por archivo
+    },
+});
+class OcrController {
+    constructor() {
+        // Middleware para procesar la subida de archivos
+        this.uploadFiles = upload.array("files", 10);
+        // Método para manejar errores de multer
+        this.handleMulterError = (err, req, res, next) => {
+            if (err instanceof multer_2.MulterError) {
+                return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                    status: http_status_codes_1.StatusCodes.BAD_REQUEST,
+                    body: {
+                        error: {
+                            message: `Error al procesar archivos: ${err.message}`,
+                        },
+                    },
+                });
+            }
+            else if (err) {
+                return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                    status: http_status_codes_1.StatusCodes.BAD_REQUEST,
+                    body: {
+                        error: {
+                            message: err.message || "Error desconocido al procesar archivos",
+                        },
+                    },
+                });
+            }
+            next();
+        };
+        this.claudeService = new claude_service_1.ClaudeService();
+    }
+    // Método principal para extraer datos
+    extractData(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.current_user.id;
+                // Verificar que hay archivos
+                if (!req.files || !req.files.length) {
+                    return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                        status: http_status_codes_1.StatusCodes.BAD_REQUEST,
+                        body: {
+                            error: {
+                                message: "No se han proporcionado archivos para procesar",
+                            },
+                        },
+                    });
+                }
+                // Obtener los archivos del request
+                const files = req.files;
+                // Preparar información básica de archivos para logging
+                const filesInfo = files.map((file) => ({
+                    originalName: file.originalname,
+                    size: file.size,
+                    mimetype: file.mimetype,
+                }));
+                console.log(`Procesando ${files.length} archivos para el usuario ${userId}:`, filesInfo);
+                // Llamar al servicio de Claude para extraer datos
+                const extractedData = yield this.claudeService.extractDataFromFiles(files, userId);
+                // Responder con los datos extraídos
+                res.status(http_status_codes_1.StatusCodes.OK).json({
+                    status: http_status_codes_1.StatusCodes.OK,
+                    body: {
+                        message: `${files.length} archivo(s) procesado(s) correctamente`,
+                        data: extractedData,
+                    },
+                });
+            }
+            catch (error) {
+                console.log("Error in extractData: ", error);
+                res.status(error.status || http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    status: error.status || http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR,
+                    body: {
+                        error: {
+                            message: error.message || "Server error while extracting data",
+                        },
+                    },
+                });
+            }
+        });
+    }
+}
+exports.OcrController = OcrController;

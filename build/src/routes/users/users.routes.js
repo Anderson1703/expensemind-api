@@ -18,6 +18,7 @@ const usersRouter = (0, express_1.Router)();
 const usersController = new users_controller_1.UsersController();
 usersRouter.get("/", validation_session_middleware_1.validateSession, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return yield usersController.getUsers(req, res, next); }));
 usersRouter.get("/load-data", validation_session_middleware_1.validateSession, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return usersController.loadData(req, res, next); }));
+usersRouter.get("/payment-history", validation_session_middleware_1.validateSession, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return yield usersController.getPaymentHistory(req, res, next); }));
 usersRouter.get("/user/:id", validation_session_middleware_1.validateSession, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return yield usersController.getUserById(req, res, next); }));
 usersRouter.get("/user-by-token", validation_session_middleware_1.validateSession, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return yield usersController.getUserByToken(req, res, next); }));
 usersRouter.get("/email/:email", validation_session_middleware_1.validateSession, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () { return yield usersController.getUserByEmail(req, res, next); }));

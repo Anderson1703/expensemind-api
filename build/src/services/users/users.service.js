@@ -77,6 +77,23 @@ class UsersService {
             return user;
         });
     }
+    getPaymentHistory(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield this.prisma.user.findUnique({
+                where: { id: userId },
+                include: {
+                    paymentHistory: true,
+                },
+            });
+            if (!user) {
+                throw {
+                    message: "User not found",
+                    status: http_status_codes_1.StatusCodes.NOT_FOUND,
+                };
+            }
+            return user.paymentHistory;
+        });
+    }
     updateUser(id, user) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.getUserById(id);
