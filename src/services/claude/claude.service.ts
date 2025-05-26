@@ -174,7 +174,7 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
         `Error al extraer datos de archivos para usuario ${userId}:`,
         error
       );
-      return {
+      throw {
         status: StatusCodes.INTERNAL_SERVER_ERROR,
         message: error.message || "Error desconocido al procesar archivos",
       };
