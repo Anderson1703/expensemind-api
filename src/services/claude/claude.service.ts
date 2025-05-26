@@ -137,13 +137,21 @@ REGLAS:
 IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
 `;
 
-      const msg = await anthropic.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        temperature: 0.1, // Temperatura baja para mayor consistencia
-        system: systemPrompt,
-        messages: messages as any,
-      });
+      const msg = await anthropic.messages
+        .create({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          temperature: 0.1, // Temperatura baja para mayor consistencia
+          system: systemPrompt,
+          messages: messages as any,
+        })
+        .catch((error) => {
+          console.error("Error al enviar el mensaje a Claude:", error);
+          throw {
+            status: StatusCodes.INTERNAL_SERVER_ERROR,
+            message: "Error al procesar la solicitud con Claude",
+          };
+        });
 
       const responseText =
         msg.content[0].type === "text" ? msg.content[0].text : "{}";
