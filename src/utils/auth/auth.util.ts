@@ -22,9 +22,7 @@ export class AuthUtil {
   }
 
   static async generateToken(payload: any): Promise<string> {
-    // return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "1h" });
-    return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "5m" });
-
+    return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "1h" });
   }
 
   static async hashPassword(password: string): Promise<string> {

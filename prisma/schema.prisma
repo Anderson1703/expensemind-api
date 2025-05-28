@@ -50,7 +50,7 @@ model Expense {
   categoryId String
 
   date        DateTime
-  urlFile     String?
+  uploadedWithFile Boolean @default(false)
   totalAmount Float
   info        String?
   business    String?
