@@ -94,12 +94,20 @@ REGLAS:
 
 IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
 `;
-                const msg = yield anthropic.messages.create({
+                const msg = yield anthropic.messages
+                    .create({
                     model: "claude-sonnet-4-20250514",
                     max_tokens: 1000,
                     temperature: 0.1, // Temperatura baja para mayor consistencia
                     system: systemPrompt,
                     messages: messages,
+                })
+                    .catch((error) => {
+                    console.error("Error al enviar el mensaje a Claude:", error);
+                    throw {
+                        status: http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR,
+                        message: "Error al procesar la solicitud con Claude",
+                    };
                 });
                 const responseText = msg.content[0].type === "text" ? msg.content[0].text : "{}";
                 try {
@@ -122,7 +130,7 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
             }
             catch (error) {
                 console.error(`Error al extraer datos de archivos para usuario ${userId}:`, error);
-                return {
+                throw {
                     status: http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR,
                     message: error.message || "Error desconocido al procesar archivos",
                 };
