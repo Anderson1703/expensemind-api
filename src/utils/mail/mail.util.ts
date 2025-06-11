@@ -123,7 +123,7 @@ export class MailUtil {
         <body>
             <div class="container">
                 <div class="header">
-                    <img class="logo" src="https://outgoing-walkover-548.notion.site/image/attachment%3A9092a8a2-7ca2-49bc-96e9-aef6341169f4%3Alogo.png?table=block&id=2096293e-864a-80dc-9a59-c337345417b4&spaceId=c1403a56-3800-4276-85ee-5eee1442683c&width=1370&userId=&cache=v2" alt="ExpenseMind">
+                    <img class="logo" src="https://i.imgur.com/2FN2vSU.png" alt="ExpenseMind">
                     <h1 class="title">Restablece tu contraseña</h1>
                 </div>
                 
@@ -224,7 +224,7 @@ export class MailUtil {
         <body>
             <div class="container">
                 <div class="header">
-                    <img class="logo" src="https://outgoing-walkover-548.notion.site/image/attachment%3A9092a8a2-7ca2-49bc-96e9-aef6341169f4%3Alogo.png?table=block&id=2096293e-864a-80dc-9a59-c337345417b4&spaceId=c1403a56-3800-4276-85ee-5eee1442683c&width=1370&userId=&cache=v2" alt="ExpenseMind">
+                    <img class="logo" src="https://i.imgur.com/2FN2vSU.png" alt="ExpenseMind">
                     <h1 class="title">Tu código de verificación</h1>
                 </div>
                 
