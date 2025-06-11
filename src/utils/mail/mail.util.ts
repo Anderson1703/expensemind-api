@@ -123,7 +123,7 @@ export class MailUtil {
         <body>
             <div class="container">
                 <div class="header">
-                    <img class="logo" src="https://i.imgur.com/2FN2vSU.png" alt="ExpenseMind">
+                    <img class="logo" src="https://www.expensemind.com/logo.png" alt="ExpenseMind">
                     <h1 class="title">Restablece tu contraseña</h1>
                 </div>
                 
@@ -224,7 +224,7 @@ export class MailUtil {
         <body>
             <div class="container">
                 <div class="header">
-                    <img class="logo" src="https://i.imgur.com/2FN2vSU.png" alt="ExpenseMind">
+                    <img class="logo" src="https://www.expensemind.com/logo.png" alt="ExpenseMind">
                     <h1 class="title">Tu código de verificación</h1>
                 </div>
                 
