@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { PrismaClient } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import { processFilesForClaude } from "../../utils/compressor/compressor.util";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -70,6 +71,23 @@ export class ClaudeService {
     userId: string
   ): Promise<ExtractionResult> {
     try {
+      // Validar y procesar archivos
+      const validation = this.validateFiles(files);
+
+      if (!validation.valid) {
+        return {
+          status: StatusCodes.BAD_REQUEST,
+          message: validation.message!,
+        };
+      }
+
+      const processedData = await processFilesForClaude(files);
+      console.log(
+        `Archivos procesados para usuario ${userId}:`,
+        processedData.stats
+      );
+
+      // Obtener categorías del usuario
       const categories: Category[] = await this.prisma.category.findMany({
         where: { userId: userId },
         orderBy: {
@@ -77,6 +95,7 @@ export class ClaudeService {
         },
       });
 
+      // Crear mensaje usando los archivos procesados
       const messages: Message[] = [
         {
           role: "user",
@@ -84,13 +103,14 @@ export class ClaudeService {
         },
       ];
 
-      files.forEach((file) => {
+      // Convertir el contenido procesado al formato de mensaje
+      processedData.claudeContent.forEach((content) => {
         messages[0].content.push({
-          type: file.mimetype.startsWith("image/") ? "image" : "document",
+          type: content.type,
           source: {
             type: "base64",
-            media_type: file.mimetype,
-            data: file.buffer.toString("base64"),
+            media_type: content.source.media_type,
+            data: content.source.data,
           },
         });
       });
@@ -104,7 +124,7 @@ export class ClaudeService {
       const systemPrompt = `Eres un experto en extracción y clasificación de datos de facturas. Extraerás datos clave y asignarás la categoría más adecuada del gasto según una lista.
 
 INSTRUCCIONES:
-1. Analiza las imágenes proporcionadas buscando facturas o recibos.
+1. Analiza las imágenes y documentos proporcionados buscando facturas o recibos.
 2. Extrae: fecha, monto total, descripción corta, nombre del negocio.
 3. Asigna la categoría más apropiada del gasto con base en su descripción, tipo de compra y establecimiento.
 
@@ -135,54 +155,60 @@ REGLAS:
 - Si no se detecta un gasto válido, devuelve error.
 
 IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
-`;
+      `;
 
-      const msg = await anthropic.messages
-        .create({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          temperature: 0.1, // Temperatura baja para mayor consistencia
-          system: systemPrompt,
-          messages: messages as any,
-        })
-        .catch((error) => {
-          console.error("Error al enviar el mensaje a Claude:", error);
-          throw {
-            status: StatusCodes.INTERNAL_SERVER_ERROR,
-            message: "Error al procesar la solicitud con Claude",
-          };
-        });
+      console.log(
+        `Enviando ${processedData.claudeContent.length} archivos a Claude para usuario ${userId}`
+      );
+
+      const msg = await anthropic.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        temperature: 0.1,
+        system: systemPrompt,
+        messages: messages as any,
+      });
 
       const responseText =
         msg.content[0].type === "text" ? msg.content[0].text : "{}";
+      const parsedResponse = JSON.parse(responseText);
 
-      try {
-        const parsedResponse = JSON.parse(responseText);
-
-        // Validación básica de la respuesta
-        if (parsedResponse.status === "error") {
-          return parsedResponse as ErrorResponse;
-        }
-
-        // Validar que tenga los campos requeridos
-        if (
-          !parsedResponse.hasOwnProperty("date") ||
-          !parsedResponse.hasOwnProperty("totalAmount") ||
-          !parsedResponse.hasOwnProperty("categoryId")
-        ) {
-          throw new Error("Respuesta incompleta: faltan campos requeridos");
-        }
-
-        return parsedResponse as ExtractedData;
-      } catch (parseError) {
-        throw new Error("Error al procesar la respuesta del análisis");
+      // Validación de respuesta
+      if (parsedResponse.status === "error") {
+        return parsedResponse as ErrorResponse;
       }
+
+      if (
+        !parsedResponse.date ||
+        !parsedResponse.totalAmount ||
+        !parsedResponse.categoryId
+      ) {
+        throw new Error("Respuesta incompleta: faltan campos requeridos");
+      }
+
+      return parsedResponse as ExtractedData;
     } catch (error: any) {
-      console.error(
-        `Error al extraer datos de archivos para usuario ${userId}:`,
-        error
-      );
-      throw {
+      console.error(`Error extrayendo datos para usuario ${userId}:`, error);
+
+      // Si ya es un error estructurado, devolverlo
+      if (error.status) return error;
+
+      // Manejo específico de errores conocidos
+      if (error.message?.includes("exceeds 5 MB maximum")) {
+        return {
+          status: StatusCodes.BAD_REQUEST,
+          message: "Archivo excede el límite de tamaño permitido",
+        };
+      }
+
+      if (error instanceof SyntaxError) {
+        return {
+          status: StatusCodes.INTERNAL_SERVER_ERROR,
+          message: "Error procesando respuesta de Claude",
+        };
+      }
+
+      return {
         status: StatusCodes.INTERNAL_SERVER_ERROR,
         message: error.message || "Error desconocido al procesar archivos",
       };
@@ -190,46 +216,57 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
   }
 
   /**
-   * Método auxiliar para validar si un archivo es una imagen válida
-   */
-  private isValidImageFile(file: Express.Multer.File): boolean {
-    const validImageTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-    ];
-    return validImageTypes.includes(file.mimetype);
-  }
-
-  /**
-   * Método auxiliar para validar si un archivo es un documento válido
-   */
-  private isValidDocumentFile(file: Express.Multer.File): boolean {
-    const validDocumentTypes = ["application/pdf"];
-    return validDocumentTypes.includes(file.mimetype);
-  }
-
-  /**
-   * Valida que los archivos sean del tipo correcto antes de procesarlos
+   * Valida que los archivos sean del tipo correcto
    */
   validateFiles(files: Express.Multer.File[]): {
     valid: boolean;
     message?: string;
   } {
-    if (!files || files.length === 0) {
+    if (!files?.length) {
       return { valid: false, message: "No se proporcionaron archivos" };
     }
 
+    const validTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "application/pdf",
+    ];
+
     for (const file of files) {
-      if (!this.isValidImageFile(file) && !this.isValidDocumentFile(file)) {
+      if (!validTypes.includes(file.mimetype)) {
         return {
           valid: false,
-          message: `Tipo de archivo no válido: ${file.mimetype}. Solo se permiten imágenes (JPEG, PNG, WebP) y PDFs`,
+          message: `Tipo de archivo no válido: ${file.mimetype}. Solo se permiten imágenes (JPEG, PNG, WebP, GIF) y PDFs`,
         };
       }
     }
 
     return { valid: true };
+  }
+
+  /**
+   * Método para verificar el estado de la API de Claude
+   */
+  async healthCheck(): Promise<boolean> {
+    try {
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 10,
+        messages: [
+          {
+            role: "user",
+            content: [{ type: "text", text: "Hello" }],
+          },
+        ],
+      });
+
+      return response.content.length > 0;
+    } catch (error) {
+      console.error("Claude API health check failed:", error);
+      return false;
+    }
   }
 }
